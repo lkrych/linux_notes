@@ -1,4 +1,4 @@
-# A Gentle Introduction to Linux
+# A Gentle Overview of Linux
 
 ## Table of Contents
 * [OS's are like ogres are like onions](#oss-have-layers)
