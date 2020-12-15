@@ -89,4 +89,31 @@ For example, when you run `cat`, the shell searches the directories listed in `P
 | CTRL-U   | erase from cursor to the beginning of the line |
 | CTRL-K   | erase from cursor to end of line |
 
+## Shell Input and Output
+
+To send the output of a *command* to a file instead of the terminal, use the `>` redirection operator. The shell creates *file* if it doesn't already exist. If *file* exists, the shell erases the original file first. 
+
+```bash
+command > file
+```
+
+You can append the output to the file instead of overwriting it with the `>>` redirection operator.
+
+```bash
+command >> file
+```
+
+To send the standard output of a command to the standard input of another command, use the pipe operator `|`.
+
+```bash
+head file1 | grep somesearch
+```
+
+If you want to redirect the output of **standard error** you need to use some special syntax. The number 2 specifies the `stream ID` that the shell modifies.
+
+```bash
+ls /ffffff > f 2> e
+```
+
+## Listing and Manipulating Processes
 
