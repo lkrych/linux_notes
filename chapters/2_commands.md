@@ -4,6 +4,21 @@
 * [Standard Input and Output](#standard-input-and-output)
 * [Simple Unix Commands](#simple-unix-commands)
 * [Directory Commands](#directory-commands)
+* [Shell globbing](#shell-globbing)
+* [Intermediate Unix Commands](#intermediate-unix-commands)
+* [Environment and Shell Variables](#environment-and-shell-variables)
+* [Shell Keyboard Shortcuts](#shell-keyboard-shortcuts)
+* [Shell Input and Output](#shell-input-and-output)
+* [Listing, Manipulating, and Killing Processes](#listing-manipulating-and-killing-processes)
+  * [ps options](#ps-options)
+  * [Killing and Stopping Processes](#killing-and-stopping-processes)
+  * [Running a Process in the Background](#runnning-a-process-in-the-background)
+* [File Modes and Permissions](#file-modes-and-permissions)
+  * [Modifying Permissions](#modifying-permissions)
+  * [Symbolic Links](#symbolic-links)
+* [Archiving and Compressing Files](#archiving-and-compressing-files)
+* [Linux Directory Hierarchy](#linux-directory-hierarchy)
+
 
 
 ## Standard Input and Output
@@ -231,7 +246,7 @@ Archives created by tar usually have a `.tar` suffix. The `c` flag above activat
 
 The details of the Linux directory structure are highlighted in the [Filesystem Hierarchy Standard](https://www.pathname.com/fhs/).
 
-<img src="./resources/fhs2.png">
+<img src="resources/fhs.png">
 
 Here are the most important subdirectories in root:
 
