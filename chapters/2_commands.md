@@ -167,3 +167,91 @@ You can use the `&` to push a process into the background of a terminal. The she
 # check in on script
 fg
 ```
+
+## File Modes and Permissions
+
+Every Unix file has a set of **permissions** that determine where you can read, write or run the file. Running `ls -l` will display the permissions.
+
+```bash
+~/linux_notes/chapters(main*) » ls -l                      
+-rw-r--r--  1 lkrych  staff  6532 Dec 13 10:10 1_intro.md
+-rw-r--r--  1 lkrych  staff  7154 Dec 16 08:51 2_commands.md
+```
+
+The file's **mode** represents the file's permissions and some extra info. There are four points to the mode. Let's look at the mode for this chapter:  `-rw-r--r--`.
+* The first character of the mode is the file type, a dash `-` denotes a regular file, meaning there is nothing special about the file. The rest of the file types are discussed in the next chapter.
+* The rest of the file's mode contains the permissionns, which break into three sets: user, group, and other. 
+
+The permissions above show that the file is readable and writable by the user, readable by the staff group, and everyone else, the other, have read permissions as well.
+
+### Modifying Permissions
+
+To change permissions, use the `chmod` command. First pick the set of permissions that you want to change, and then pick the bit to change. For example, add and remove the execution ability for `file`.
+
+```bash
+chmod u+x file
+chmod u-x file
+```
+
+You will sometimes see people changing permissions with octal forms. See `chmod(1)` in the man pages for more info.
+
+```bash
+chmod 644 file
+```
+
+### Symbolic Links
+
+A **symbolic link** is a file that points to another file or directory, creating an alias. They offer quick access to obscure directory paths. In a `ls` call, a symbolic link will have a file type of `l` in the file mode.
+
+To create a symbolic link from target to linkname use:
+
+```bash
+ln -s target linkname
+```
+
+## Archiving and Compressing Files
+
+The program `gzip` is one of the current standard Unix compression programs. A file ends with a `.gz` suffix is a GNU Zip archive.
+
+```bash
+gzip somefile
+gunzip somefile.gz
+```
+
+Unlike the zip programs of other operating systems, **gzip does not create archives of files**. This means that it does not pack multiple files and directories into one file. To create ann archive, use `tar` instead.
+
+```bash
+tar cvf archive.tar file1 file2 ... #pack
+tar xvc archive.tar #unpack
+```
+
+Archives created by tar usually have a `.tar` suffix. The `c` flag above activates create mode. The `v` flag activates verbose diagnostic output, the `f` flag denotes the file option. The `x` flag in the second command specifies the extract (unpack) mode.
+
+## Linux Directory Hierarchy
+
+The details of the Linux directory structure are highlighted in the [Filesystem Hierarchy Standard](https://www.pathname.com/fhs/).
+
+<img src="./resources/fhs2.png">
+
+Here are the most important subdirectories in root:
+
+* **/bin** - Contains executables, including most of the basic Unix utilities like `cp` and `ls`.
+* **/boot** - Contains kernel boot loader files.
+* **/dev** - Contains device files.
+* **/etc** - Core system configuration. Contains user password, boot, device, networking and other setup files. Many of these files are specific to the machines hardware.
+* **/home** - Holds personal directories for regular users. 
+* **/lib** - Holds library files that executables can use. This directory should contain only shared libraries.
+* **/proc** - Provides system statistics through a browsable directory interface. It contains information about currently running processes and some kernel parameters.
+* **/sys** - Provides a device and system interface, more about sys in the next chapter.
+* **/sbin** - The place for system executables. Only root can execute these programs.
+* **/tmp** - A storage area for small, temporary files. Any user can read and write from /tmp, but the user may not have permission to access another user's files there. If something is important, don't put it in /tmp.
+* **/usr** - Contains a large directory hierarchy, including the bulk of the Linux system.
+* **/var** - Where programs record runtime information. System logging, user tracking, caches, and other files that system programs create and manage are here. 
+
+
+The `/usr` directory is where most user space programs and data reside. 
+
+On linux systems the kernel is normally in `vmlinuz` or `/boot/vmlinuz`. A boot loader loads this file into memory and sets it in motion. when the system boots. Once the boot loader runs and sets the kernel in motion, the main kernel file is no longer used by the system. The kernel does however use modules on demand and these modules live in `/lib/modules`.
+
+
+
