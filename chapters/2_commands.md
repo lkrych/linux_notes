@@ -115,5 +115,55 @@ If you want to redirect the output of **standard error** you need to use some sp
 ls /ffffff > f 2> e
 ```
 
-## Listing and Manipulating Processes
+## Listing, Manipulating, and Killing Processes
 
+Each process on a linux system has a numeric process ID (PID). For a quick list of running processes, you can run `ps`.
+
+```bash
+$ ps                                     
+  PID TTY      STAT  TIME CMD
+ 1683 ttys004  R     0:00.66 -zsh
+```
+* **PID** - The process ID
+* **TTY** - The terminal device where the process is running
+* **STAT** - the process status, S means, R means running.
+* **TIME** - The amount of CPU time in minutes and seconds that the process has spent running instructions on the processor.
+* **CMD** - The command running, be aware this can change.
+
+### PS options
+
+* `ps x` - show all of your running processes.
+* `ps ax` - show all processes on the system, not just your own.
+* `ps u` - include more detailed information on processes.
+* `ps w` - show full command names, not just what fits on one line.
+
+
+### Killing and Stopping Processes
+
+To terminate a process, send it a signal with the `kill` command. 
+
+```bash
+kill pid
+```
+
+There are many types of signals, the most brutal way to kill a process is with the KILL command, or -9. Other signals give the process a chance to clean up after itself, but with KILL, the OS terminates the process and forcibly removes it.
+
+A more gentle way to stop a process is to use the STOP signal. STOPped processes are still in memory and can be continued (CONT).
+
+```bash
+kill -STOP pid
+# do something
+kill -CONT pid
+```
+
+### Running a process in the background
+
+You can use the `&` to push a process into the background of a terminal. The shell should respond by printing the PID of the new background process, and the prompt should return so that you can continue working. You can try to use `fg` to bring it back. 
+
+```bash
+./script_that_does_something_for_ten_minutes &
+> PID
+#do some work
+# check in on script
+fg
+```
