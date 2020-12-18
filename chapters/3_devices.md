@@ -6,6 +6,9 @@
 * [dd](#dd)
 * [Device Names](#recognizing-a-device-by-name)
 * [Creating Device FIles](#creating-device-files)
+* [udev and devtmpfs](#udev-and-devtmpfs)
+    * [udevadm](#udevadm)
+* [SCSI and the kernel](#scsi-and-the-kernel)
 
 Our goal in this section is to introduce you to how you can extract information about devices attached to teh system. Later details will go into more detail about specific kinds of devices.
 
