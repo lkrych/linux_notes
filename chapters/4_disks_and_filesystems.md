@@ -4,7 +4,8 @@
 * [Components of a Disk](#components-of-a-disk)
 * [Partition Tables](#partition-tables)
     * [Viewing a partition table](#viewing-a-partition-table)
-
+* [Hard Disks](#disks)
+* [SSDs](#solid-state-disks)
 ## Components of a Disk
 
 Disks are broken up into **partitions**. On Linux, they are denoted with a number after the whole block device, and therefore have device names like `/dev/sda1`. The **kernel presents each partition as a block device**, just as it would an entire disk. 
