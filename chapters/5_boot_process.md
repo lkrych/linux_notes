@@ -1,6 +1,12 @@
 # Boot Process - Kernel and User Space
 
 ## Table of Contents
+* [Kernel Boot](#kernel-boot)
+    * [Viewing kernel startup messages](#viewing-kernel-startup-messages)
+    * [Kernel initialization](#kernel-initialization-and-boot-options)
+    * [Boot Loaders](#boot-loaders)
+    * [How do boot loaders work?](#how-do-boot-loaders-work)
+* [User Space Boot](#user-space-boot)
 
 ## Kernel Boot
 
@@ -58,4 +64,26 @@ The main bootloader that you will probably encounter is the Grand Unified Boot L
 
 ### How do Boot Loaders work?
 
-There are two main mechanisms
+There are two main schemes by which PCs boot: **MBR or UEFI**.
+
+The **Master Boot Record (MBR)** includes a small area that the PC BIOS loads and executes after its Power-on Self Test(POST). Unfortunately, this is too little storage to house almost any boot loader, so additional space is necessary. In this case, the initial piece of code in the MBR does nothing other than load the rest of the boot loader code.
+
+PIC manufacturers and software companies decided that BIOS is severely limited, so they created **Unified Extensible Firmware Interface (UEFI)**. Booting is radically different on UEFI systems. Rather than executable boot code residing outside of a filesystem, there is always a special filesystem called the EFI System Partition (ESP), which contains a directory named `efi`. Each boot loader has its own identifier  and a corresponding subdirectory in the `efi` directory, ex: `efi/grub`.
+
+## User Space Boot
+
+The point where the kernel starts its first user-space process, `init`, is significant not only because it is **where the memory and CPU are ready for normal system operation**, but there's where the rest of the system builds. User space starts roughly in this order:
+
+1. `init`
+2. Essential low-level services such as `udevd` and `syslogd`
+3. Network configuration
+4. Mid- and high-level services (`cron`, etc.)
+5. Login prompts, GUIs, and other high-level applications.
+
+### Init
+
+`init` is a user-space program like any other program on Linux. You can find it in `/sbin` with many other system binaries. It's main purpose is to **start and stop the essential service processes on the system**. There are three major implementations of `init` on Linux: `system V`, `systemd`, and `Upstart`.
+
+There are many different implementations of `init` because `system V` and other **older versions** relied onn a sequence that performed **only one startup task at a time**. Under this system it is easy to resolve dependencies, however **the performance isn't terribly good** because two parts of the boot sequence cannot run at once.
+
+`systemd`, and `Upstart` have attempted to remedy the performance issue by **allowing many services to start in parallel** thereby speeding up the boot process.
