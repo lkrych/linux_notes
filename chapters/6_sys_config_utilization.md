@@ -148,4 +148,38 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 52 6	1 * *	root	test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
 #
 ```
+### Understanding User IDs
 
+The `setuid` programs such as `sudo` and `su` allow you to change users. There are two ways to change a user ID in Linux systems, and the kernel handles both of them. The first is with the `setuid` executables and the second is through the `setuid()` family of system calls.
+
+The kernel has three basic rules about what a process can or can't do:
+
+1. A process running as root (userid 0) can use `setuid()` to become any other user.
+2. A process not running as root has severe restrictions on how it may use `setuid()`.
+3. Any process can execute a `setuid` program as long as it has adequate file permissions.
+
+Every process has more than one user ID. There is the **effective user ID (euid)**, which **defines the access rights for a process**. The second user ID is the **real user ID (ruid)**, which **indicates who initiated a process**. 
+
+On normal Linux systems, most processes have the same effective user ID and real user ID. You can use a custom `ps` call to view this information.
+
+```bash
+lkrych@lkrych-VirtualBox:/$ ps -eo pid,euser,ruser,comm
+    PID EUSER    RUSER    COMMAND
+    1 root     root     systemd
+    2 root     root     kthreadd
+    3 root     root     rcu_gp
+    ...
+    1363 lkrych   lkrych   systemd
+    1364 lkrych   lkrych   (sd-pam)
+    1377 lkrych   lkrych   gnome-keyring-d
+```
+
+Because the Linux kernel handles all user switches, systems developers and administrators need to be extremely careful with two things:
+1. the programs that have `setuid` permissions. 
+2. what those programs do.
+
+Exploiting weaknesses in programs running as root is a primary method of systems intrusion.
+
+### Authentication
+
+The kernel doesn't know anything about authentication. In some systems, **Pluggable Authentication Modules (PAM)** are used to handle this duty.
