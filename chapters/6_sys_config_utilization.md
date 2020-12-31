@@ -2,6 +2,14 @@
 
 ## Table of Contents
 * [System Configuration](#system-configuration)
+    * [System Logging](#system-logging)
+    * [User Management Files](#user-management-files)
+    * [Time](#time)
+    * [Cron](#cron)
+    * [Understanding User IDs](#understanding-user-ids)
+    * [Authentication](#authentication)
+* [Resource Utilization](#resource-utilization)
+
 
 ## System Configuration
 
@@ -183,3 +191,6 @@ Exploiting weaknesses in programs running as root is a primary method of systems
 ### Authentication
 
 The kernel doesn't know anything about authentication. In some systems, **Pluggable Authentication Modules (PAM)** are used to handle this duty.
+
+## Resource Utilization
+
