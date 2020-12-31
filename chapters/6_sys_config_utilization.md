@@ -194,3 +194,99 @@ The kernel doesn't know anything about authentication. In some systems, **Plugga
 
 ## Resource Utilization
 
+There are **three basic kinds of hardware resources**: **CPU, memory and I/O**. Processes vie for these resources, and the **kernel's job is to allocate resources fairly**.
+
+Many of the tools that will be introduced are often thought of as performance-monitoring tools. They are also useful for understanding how the kernel works. 
+
+### Tracking Processes
+
+The `ps` command is useful because it displays the current processes running on the system. Unfortunately, **it does little to tell you how the processes are changing over time**. 
+
+The `top` program displays the current system status as well as many of the fields in a `ps` listing. It also updates the display every second. Most importantly, it **shows the most active processes (those currently taking up the most CPU time)**. You can send commands to `top`.
+
+```bash
+lkrych@lkrych-VirtualBox:/$ top
+top - 12:17:41 up  1:41,  1 user,  load average: 0.12, 0.06, 0.01
+Tasks: 208 total,   1 running, 159 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.7 us,  0.2 sy,  0.0 ni, 99.2 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+KiB Mem :  4030264 total,  2153888 free,   816652 used,  1059724 buff/cache
+KiB Swap:   483800 total,   483800 free,        0 used.  2949728 avail Mem 
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND    
+ 1595 lkrych    20   0 4064456 271520 102460 S   3.0  6.7   0:27.64 gnome-she+ 
+ 1773 lkrych    20   0 1026372  24724  19348 S   0.3  0.6   0:00.21 gsd-media+ 
+ 1964 lkrych    20   0  804840  38776  28348 S   0.3  1.0   0:03.27 gnome-ter+ 
+ 2634 lkrych    20   0   48884   3784   3144 R   0.3  0.1   0:00.23 top        
+    1 root      20   0  160032   9196   6640 S   0.0  0.2   0:01.75 systemd    
+    2 root      20   0       0      0      0 S   0.0  0.0   0:00.00 kthreadd
+
+```
+
+* **spacebar** - updates the display immediately.
+* **M** - sorts by current resident memory usage.
+* **T** - sorts by total (cumulative) CPU usage.
+* **P** - sorts by current CPU usage (the default).
+* **u** - displays only one user's processes.
+* **f** - selects different statistics to display.
+
+Two other utilities for linux offer more information, `atop` and `htop`.
+
+### Finding Open Files with lsof
+
+The `lsof` command **lists open files adn the processes using them**. Because Unix places a lot of emphasis on files, `lsof` is among the most useful tools.
+
+Let's take a look at the output of `lsof`.
+
+```bash
+h@lkrych-VirtualBox:/$ lsof | tail
+lsof      2667               lkrych  txt       REG                8,1   163224        938 /usr/bin/lsof
+lsof      2667               lkrych  mem       REG                8,1 10281936       3670 /usr/lib/locale/locale-archive
+lsof      2667               lkrych  mem       REG                8,1   144976     138671 /lib/x86_64-linux-gnu/libpthread-2.27.so
+lsof      2667               lkrych  mem       REG                8,1    14560     138561 /lib/x86_64-linux-gnu/libdl-2.27.so
+lsof      2667               lkrych  mem       REG                8,1   464824     138660 /lib/x86_64-linux-gnu/libpcre.so.3.13.3
+lsof      2667               lkrych  mem       REG                8,1  2030544     138538 /lib/x86_64-linux-gnu/libc-2.27.so
+lsof      2667               lkrych  mem       REG                8,1   154832     138683 /lib/x86_64-linux-gnu/libselinux.so.1
+lsof      2667               lkrych  mem       REG                8,1   170960     138510 /lib/x86_64-linux-gnu/ld-2.27.so
+lsof      2667               lkrych    4r     FIFO               0,13      0t0      37644 pipe
+lsof      2667               lkrych    7w     FIFO               0,13      0t0      37645 pipe
+```
+
+Here are what each column refers to:
+
+1. **Command** - the command name for the process that holds the file descriptor
+2. **PID** - the process ID
+3. **User** - the user running the process
+4. **FD** - This field can contain two types of elements. It can show the purpose of the file, it can also list the file descriptor of the open file.
+5. **Type** - The file type (regular, directory, socket, etc.)
+6. **Device** - The major and minor number of the device that holds the file.
+7. **Size** - The file's size.
+8. **Node** - The file's inode number.
+9. **Name** - the filename.
+
+There are two basic approaches to running `lsof`:
+1. list everything and pipe the output to a command and then search for what you are looking for. This can take a while because `lsof` outputs A LOT of information.
+2. Narrow down the list that `lsof`provides with command-line options.
+
+You can use command line options to provide a filename as an argument and `lsof` will list only entries that match the arguments.
+```bash
+lsof some_file
+```
+
+Another option to is list the open files for a particular process ID
+```bash
+lsof -p PID
+```
+
+### Tracing Program Execution
+
+The tools we've seen so far, `top` and `lsof`, examine active processes. However, if you have no idea why a program crashes immediately after starting up, even `lsof` won't help you because the process won't be active!
+
+The `strace` (system call trace) and `ltrace` (library call trace) commands can **help you discover what a program attempts to do**. These tools produce EXTRAORDINARILY large amounts of output, but once you know what to look for, they can become useful.
+
+A **system call** is a **privileged operation that a user space process asks the kernel to perform**. The `strace` tool prints all the system calls that a process makes. The `ltrace` command tracks shared library calls. It doesn't track anything at the kernel level. 
+
+### Threads
+
+A **thread** is similar to a process, it has a unique identifier, and the kernel schedules and runs threads just like processes. However, unlike separate processes, which do not share system resources, **all threads inside a single process share their system resources**. 
+
+Many programs have only one thread. A process with multiple threads is known as multithreaded. **All processes start with a single thread**, this thread is known as the **main thread**.  The main thread starts new threads in order for the process to become multithreaded, this is similar to the way that a process can call `fork()` to start a new process.
