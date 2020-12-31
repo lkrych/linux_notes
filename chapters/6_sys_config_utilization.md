@@ -290,3 +290,50 @@ A **system call** is a **privileged operation that a user space process asks the
 A **thread** is similar to a process, it has a unique identifier, and the kernel schedules and runs threads just like processes. However, unlike separate processes, which do not share system resources, **all threads inside a single process share their system resources**. 
 
 Many programs have only one thread. A process with multiple threads is known as multithreaded. **All processes start with a single thread**, this thread is known as the **main thread**.  The main thread starts new threads in order for the process to become multithreaded, this is similar to the way that a process can call `fork()` to start a new process.
+
+The primary advantage of a multithreaded process is that when the process has a lot to do, **threads can run simultaneously on multiple processors**, **potentially speeding up computation**. Although you can also achieve this with multiple processes, **threads start faster than processes**, and it is often easier and **more efficient for threads to communicate** because they can use shared memory.
+
+To view threads, you can use the `m` option with `ps`
+
+```bash
+lkrych@lkrych-VirtualBox:/$ ps m
+  PID TTY      STAT   TIME COMMAND
+ 1381 tty1     -      0:00 /usr/lib/gdm3/gdm-x-session --run-script env GNOME_SHELL_SESSION_MODE=ubuntu gnome-session 
+    - -        Ssl+   0:00 -
+    - -        Ssl+   0:00 -
+    - -        Ssl+   0:00 -
+ 1383 tty1     -      0:12 /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/1000/gdm/Xauthority -background none -n
+    - -        Sl+    0:11 -
+    - -        Sl+    0:00 -
+    - -        Sl+    0:00 -
+    - -        Sl+    0:00 -
+    - -        Sl+    0:00 -
+    - -        Sl+    0:00 -
+    - -        Sl+    0:00 -
+    - -        Sl+    0:00 -
+    - -        Sl+    0:00 -
+    - -        Sl+    0:01 -
+```
+
+Each line shows processes along with threads. Each line with a number in the PID column represents a process, as in the normal `ps` output. The lines with dashes in the PID column represent the threads associated with the process. 
+
+If you woul dlike to view the thread IDs with `ps`, you can use a custom output format.
+
+```bash
+lkrych@lkrych-VirtualBox:/$ ps m -o pid,tid,command
+  PID   TID COMMAND
+ 1381     - /usr/lib/gdm3/gdm-x-session --run-script env GNOME_SHELL_SESSION_MODE=ubuntu gnome-session --session=ubunt
+    -  1381 -
+    -  1382 -
+    -  1396 -
+ 1383     - /usr/lib/xorg/Xorg vt1 -displayfd 3 -auth /run/user/1000/gdm/Xauthority -background none -noreset -keeptty
+    -  1383 -
+    -  1384 -
+    -  1385 -
+    -  1386 -
+    -  1387 -
+    -  1388 -
+    -  1389 -
+    -  1390 -
+
+```
