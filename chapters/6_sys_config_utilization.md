@@ -10,6 +10,17 @@
     * [Authentication](#authentication)
 * [Resource Utilization](#resource-utilization)
     * [Tracking Processes](#tracking-processes)
+    * [Finding open files - lsof](#finding-open-files-with-lsof)
+    * [Tracing Program Executionn](#tracing-program-execution)
+    * [Threads](#threads)
+    * [Measuring CPU time](#measuring-cpu-time)
+    * [Process Priorities](#process-priorities)
+    * [Load Averages](#load-averages)
+    * [Memory](#memory)
+    * [Page Faults](#page-faults)
+    * [vmstat](#vmstat)
+    * [iostat](#iostat)
+
 
 ## System Configuration
 
@@ -233,7 +244,7 @@ Two other utilities for linux offer more information, `atop` and `htop`.
 
 ### Finding Open Files with lsof
 
-The `lsof` command **lists open files adn the processes using them**. Because Unix places a lot of emphasis on files, `lsof` is among the most useful tools.
+The `lsof` command **lists open files and the processes using them**. Because Unix places a lot of emphasis on files, `lsof` is among the most useful tools.
 
 Let's take a look at the output of `lsof`.
 
