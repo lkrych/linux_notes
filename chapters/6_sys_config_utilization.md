@@ -9,7 +9,7 @@
     * [Understanding User IDs](#understanding-user-ids)
     * [Authentication](#authentication)
 * [Resource Utilization](#resource-utilization)
-
+    * [Tracking Processes](#tracking-processes)
 
 ## System Configuration
 
@@ -337,3 +337,182 @@ lkrych@lkrych-VirtualBox:/$ ps m -o pid,tid,command
     -  1390 -
 
 ```
+
+### Measuring CPU time
+
+To monitor one or more specific processes over time, use the -p option with `top`.
+
+```bash
+lkrych@lkrych-VirtualBox:/$ top -p pid1 [-p pid2 ...]
+```
+
+To find out how much CPU time a command uses during its lifetime, use `time`. Beware that most shells have a built-in `time` command that doesn't provide extensive statistics, so you'll probably need to run `/usr/bin/time`
+
+```bash
+lkrych@lkrych-VirtualBox:/$ /usr/bin/time ls
+bin   cdrom  etc   initrd.img	   lib	  lost+found  mnt  proc  run   snap  swapfile  tmp  var      vmlinuz.old
+boot  dev    home  initrd.img.old  lib64  media       opt  root  sbin  srv   sys       usr  vmlinuz
+0.00user 0.00system 0:00.00elapsed 100%CPU (0avgtext+0avgdata 2572maxresident)k
+0inputs+0outputs (0major+108minor)pagefaults 0swaps
+```
+
+The key fields of this output are:
+
+1. **User time** -  The number of seconds that the CPU has spent running the program's own code. On modern processors, some commands run so quickly, that the time rounds down to zero.
+
+2. **System time** - How much time the kernel spends going the process's work (for example, reading files and directories).
+
+3. **Elapsed time** - The total time it took to run the process from start to finish, including the time that the CPU spent doing other tasks.
+
+### Process Priorities
+
+You can change the way the kernel schedules a process in order to give the process more or less CPU time then other processes. The **kernel runs each process according to its scheduling priority**, which is a **number between -20 and 20, with -20 being the most priority**.
+
+You can use `ps -l` to see the current priority of a process, but it's a little easier to see the priorities in action with the `top` command.
+
+```bash
+lkrych@lkrych-VirtualBox:/$ top
+top - 12:17:41 up  1:41,  1 user,  load average: 0.12, 0.06, 0.01
+Tasks: 208 total,   1 running, 159 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.7 us,  0.2 sy,  0.0 ni, 99.2 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+KiB Mem :  4030264 total,  2153888 free,   816652 used,  1059724 buff/cache
+KiB Swap:   483800 total,   483800 free,        0 used.  2949728 avail Mem 
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND    
+ 1595 lkrych    20   0 4064456 271520 102460 S   3.0  6.7   0:27.64 gnome-she+ 
+ 1773 lkrych    20   0 1026372  24724  19348 S   0.3  0.6   0:00.21 gsd-media+ 
+ 1964 lkrych    20   0  804840  38776  28348 S   0.3  1.0   0:03.27 gnome-ter+ 
+ 2634 lkrych    20   0   48884   3784   3144 R   0.3  0.1   0:00.23 top        
+    1 root      20   0  160032   9196   6640 S   0.0  0.2   0:01.75 systemd    
+    2 root      20   0       0      0      0 S   0.0  0.0   0:00.00 kthreadd
+
+```
+
+The PR column lists the kernel's current schedule priority for the process. The higher the number, the less likely the kernel is to schedule the process if other processes need CPU time. The schedule **priority alone does not determine the kernel's decision to give CPU time**. 
+
+Next to the priority column is the **nice value (NI)**, which gives a hint to the kernel's scheduler. The **kernel adds the nice value to the current priority to determine the next time slot for the process**. By defaulou can t, this value is 0. To change the nice value, you can use the `renice` command.
+
+```bash
+renice 20 1595 # sets the value of NI for process 1595 to 20
+```
+
+If you're a superuser, you can set the nice value to a negative number. This feature is used when there are many tenants in a system (seems useful for cloud computing).
+
+### Load Averages
+
+**Load average** is the **average number of processes currently ready to run**. When thinking about load average, keep in mind that most processes on a system are waiting for input. This means that most processes are not ready to run and should contribute nothing to the load average.**Only processes that are actually doing something affect the load average**.
+
+The `uptime` command tells you three load averages.
+
+```bash
+lkrych@lkrych-VirtualBox:/$ uptime
+ 16:23:32 up  3:04,  1 user,  load average: 0.20, 0.07, 0.02
+```
+The three numbers at the end are the l**oad averages for the past 1 minute, 5 minutes and 15 minutes**. 
+
+**A high load average does not necessarily mean that your system is having trouble**. A system with enough memory and I/O resources can easily handle many running processes. If your system has a high load average, but it is still responding well, don't panic! 
+
+However, if you sense the system is running slow and the load average is high, you might be running into memory performance problems. When the **system is low on memory**, the kernel can start to **thrash**, or **rapidly swap memory for processes to and from disk**. 
+
+### Memory
+
+One of the simplest ways to check your system's memory status is run the `free` command.
+
+```bash
+lkrych@lkrych-VirtualBox:/$ free
+              total        used        free      shared  buff/cache   available
+Mem:        4030264      884444     2069852       16216     1075968     2873440
+Swap:        483800           0      483800
+
+```
+
+Performance problems can arise from memory shortages. The CPU has a **memory management unit (MMU)** that **translates the virtual memory addresses used by processes into real ones**. The kernel assists the MMU by breaking the memory used by processes into smaller chunks called **pages**. 
+
+The kernel maintains a data structure, called a **page table**, that contains a **mapping of a processes' virtual page address to real page address** in memory. As a process accesses memory, the MMU translates the virtual address used by the process into real addresses based on the kernel's page table. 
+
+A user process does not actually need all of its pages to be immediately available in order to run. The kernel generally **loads and allocates pages as a process needs them**, this is called **demand paging**. 
+
+### Page Faults
+
+If a memory page is not ready when a process wants to use it, the process triggers a **page fault**. In the event of a page fault, the kernel takes control of the CPU from the process in order to get the page ready.
+
+There are two kinds of page faults, minor and major. A **minor page faults** occurs when a **desired page exists in main memory but the MMU doesn't know where it is**.  This can happen when the process requests more memory or when the MMU doesn't have enough space to store all the page locations for a process. In this case, the kernel tells the MMu about the page adn permits the process to continue to run.
+
+A **major page fault** occurs when the **desired memory page isn't in main memory at all**, which means the **kernel must load it from disk**. A lot of major page faults will slow a system down because the kernel must do a substantial amount of work to provide the pages, robbing normal processes of their chance to run.
+
+Some major page faults are unavoidable, such as those that occur when you load the code from disk when running a process for the first time. The biggest problems happen when you start running out of memory and the kernel starts to swap pages of working memory out to the disk in order to make room for new pages.
+
+You can view page faults with `ps`, `top` and `time`.
+
+```bash
+lkrych@lkrych-VirtualBox:/$ /usr/bin/time cal > /dev/null
+0.00user 0.00system 0:00.00elapsed 12%CPU (0avgtext+0avgdata 2476maxresident)k
+64inputs+0outputs (1major+99minor)pagefaults 0swaps
+```
+
+```bash
+lkrych@lkrych-VirtualBox:/$ ps -o pid,min_flt,maj_flt
+  PID  MINFL  MAJFL
+ 1973   7226      1
+ 2888    160      0
+```
+
+Viewing page faults by process can help you zero in on certain problematic components
+
+### vmstat
+
+`vmstat` is a low-overhead tool that is useful for giving a **high-level view** of how often the kernel is **swapping pages in and out, busy the CPU is and I/O utilization**.
+
+```bash
+lkrych@lkrych-VirtualBox:/$ vmstat 5
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 1  0      0 2068436 125132 951172    0    0    18     2   28   48  0  0 100  0  0
+ 0  0      0 2068444 125132 951192    0    0     0     0  861 1878  1  1 98  0  0
+```
+
+The output falls into categories: 
+* **procs** for processes 
+* **memory** for memory usage 
+* **swap** for pages pulled in and out of swap 
+* **io** for disk usage 
+* **system** for the number of times the kernel switches into kernel code
+* **cpu** for the time used by different parts of the system
+
+The parameter fed to the executable determines the interval (in seconds) for checking statistics. The `b` and `r` columns indicates whether a process is blocked or running.
+
+### iostat
+
+Like `vmstat`, `iostat` will give detailed statistics about io usage.
+
+```bash
+lkrych@lkrych-VirtualBox:/$ iostat
+Linux 5.4.0-58-generic (lkrych-VirtualBox) 	12/31/2020 	_x86_64_	(4 CPU)
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           0.17    0.01    0.08    0.06    0.00   99.69
+
+Device             tps    kB_read/s    kB_wrtn/s    kB_read    kB_wrtn
+loop0             0.05         0.08         0.00        988          0
+loop1             0.00         0.00         0.00         44          0
+loop2             0.00         0.03         0.00        332          0
+loop3             0.83         0.85         0.00      10862          0
+loop4             0.01         0.08         0.00       1077          0
+loop5             0.01         0.09         0.00       1163          0
+loop6             0.00         0.01         0.00        116          0
+loop7             0.00         0.01         0.00        121          0
+scd0              0.00         0.01         0.00        184          0
+sda               3.35        75.00         9.77     953221     124200
+```
+
+tps is transfers per second, the rest are read and write data for the specific devices.
+
+If you need to dig even deeper to see I/O resources used by individual processes, the `iotop` tool can help. It is similar to `top`, in that it continuously displays processes usign the most I/O, with a general summary on top.
+
+I/O in Linux has the concept of **priorities**, it **affects how quickly the kernel schedules I/O reads and writes** for a process. In a priority such as `be/4`, the `be` part is a **scheduling class**, the number is the priority level. As with the CPU, lower numbers are higher priority.
+
+You'll see three scheduling classes from `iotop`.
+
+* **be - Best-effort**. The kernel does its best to fairly schedule I/O for this class. Most processes run under this class.
+* **rt - Real-time**. The kernel schedules any real-time I/O before any other class of I/O no matter what.
+* **idle** - The kernel performs I/O for this class only whenn no other I/O work needs to be done.j
