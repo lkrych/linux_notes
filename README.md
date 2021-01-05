@@ -9,3 +9,4 @@ These notes originate from reading How Linux Works by Brian Ward.
 4. [Disks and Filesystems](chapters/4_disks_and_filesystems.md)
 5. [Boot Process](chapters/5_boot_process.md)
 6. [System Configuration and Utilization](chapters/6_sys_config_utilization.md)
+7. [Linux Network Configuration and Services](chapters/7_network.md)
