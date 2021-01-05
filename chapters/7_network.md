@@ -69,3 +69,7 @@ It's likely that you will encounter subnet representations using **Classless Int
 | 255.240.0.0 | 12 |
 | 255.255.255.255.0 | 24 |
 | 255.255.255.192 | 26 |
+
+### Routes and the kernel routing table
+
+Connecting Internet subnets is mostly a process of identifying the hosts connected to more than one subnet. Returning to 
