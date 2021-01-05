@@ -7,6 +7,11 @@
     * [View your IP Address](#view-your-IP-address)
     * [Subnets](#subnets)
     * [Routes and the kernel routing table](#routes-and-the-kernel-routing-table)
+* [Basic ICMP and DNS tools](#basic-icmp-and-dns-tools)
+    * [ping](#ping)
+    * [traceroute](#traceroute)
+    * [host](#host)
+* [The Physical Layer and Ethernet](#the-physical-layer-and-ethernet)
 ### Introduction
 
 Networking is the practice of connecting computers and sending data between them. To make this work, you need to answer two fundamental questions:
@@ -157,3 +162,26 @@ We will take a look at Ethernet networks, the IEEE 802 family of standards docum
 2. Devices on an Ethernet network **send messages in frames**, which are wrappers around the data sent. A frame contains the origin and destination MAC address.
 
 A frame doesn't leave a single network. However, at routers, the routers take the data out of a frame, repackage it in a new frame, and send it to a host on a different physical network.
+
+### Kernel Network Interfaces
+
+The physical and Internet layers must be connected in a way that allows the Internet layer to retain its hardware-independent flexibility. The **Linux kernel maintains its own division between the two layers** and **provides communication standards for linking them** called a **kernel network interface**. 
+
+When you configure a network interface, you l**ink an IP address from the network layer with the hardware identification in the physical layer**.
+
+Network interfaces have names that usually indicate the kind of hardware underneath, such as `eth0` (first Ethernet card) and `wlan0` (wireless interface).
+
+The [`ifconfig`](#view-your-ip-address) command shows network interfaces. The left side shows the name, the right side contains settings and statistics for the interface. `ifconfig` was designed primarily to view and configure the software layers of a network interface. To dig deeper into the hardware and physical layer, use something like `ethtool`.
+
+### Network Interface Configuration
+
+To actually connect a Linux machine to the Internet, you or a piece of software must do the following:
+
+1. Connect the network hardware and ensure that the kernel has a driver for it. If the driver is present, `ifconfig -a` displays a kernel network interface corresponding to the hardware.
+2. Perform any additional physical layer setup, such as choosing a network name or password.
+3. Bind an IP address and netmask to the kernel network interface so that the kernel's device drivers (physical layer) and Internet subsystems (Internet layer) can talk to each other. 
+4. Add any additional necessary routes, including the default gateway.
+
+Although most systems used to configure the network in their boot mechanisms -- and many still do -- the dynamic nature of modern networks means that most machines don't have static IP addresses. Rather than storing the IP address and other network information on your machine, **your machine gets this information from somewhere on the local physical network** when it first attaches. 
+
+Dynamic Host Configuration Protocol (DHCP) do the basic network layer configuration on typical clients. This is nice and simplified, in the real world (especially when dealing with wireless connections), things are more complicated. In Linux, a system service that can monitor physical networks and choose and configure kernel network interfaces is used.
