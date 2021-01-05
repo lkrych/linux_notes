@@ -3,6 +3,9 @@
 ## Table of Contents
 * [Introduction](#introduction)
 * [Network Layers](#network-layers)
+* [Internet Layer](#network-internet-layer)
+    * [View your IP Address](#view-your-IP-address)
+    * [Subnets](#subnets)
 ### Introduction
 
 Networking is the practice of connecting computers and sending data between them. To make this work, you need to answer two fundamental questions:
