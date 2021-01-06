@@ -215,3 +215,52 @@ A DNS lookup in a Linux system looks like the following:
 On most systems, you can override hostname lookups with the `/etc/hosts` file.
 
 The traditional configuration file for DNS servers is `/etc/resolv.conf`.
+
+### Caching and Zero-Configuration DNS
+
+There are two main problems with traditional DNS configuration.
+
+1. The local machine does not cache name server replies, so frequent network access may be unnecessarily slow.
+2. It can be inflexible if you want to be able to look up names on your local network without messing around with network configuration
+
+To solve the first problem, many systems run an intermediate daemon to intercept name server requests and return a cached answer, otherwise requests go to a real name server. Two of the most popular daemons for Linux are `dnsmasq` and `ncsd`
+
+The second problem is the inspiration behind zero-configuration name service systems like **Multicast DNS** and **Simple Service Discovery Protocol (SSDP)**. If you want to find a host on your local network, you broadcast a request. If the host is there, it will reply with its address. The most widely used Linux implementation of mDNS is called Avahi.
+
+### nsswitch.conf
+
+The `/etc/nsswitch.conf` file controls several name-related precedence settings on your system.
+
+```bash
+lkrych@lkrych-VirtualBox:~$ cat /etc/nsswitch.conf 
+# /etc/nsswitch.conf
+#
+# Example configuration of GNU Name Service Switch functionality.
+# If you have the `glibc-doc-reference' and `info' packages installed, try:
+# `info libc "Name Service Switch"' for information about this file.
+
+
+hosts:          files mdns4_minimal [NOTFOUND=return] dns myhostname
+...
+```
+Putting `files` ahead of `dns` here ensures that you system checks the `etc/hosts` file for the hostname of your requested IP address before asking a dns server. You will also notice that Multicast DNS is asked after files. 
+
+**WARNING** keep your `/etc/hosts` file as short as possible. Putting things in here to boost performance will BURN YOU.
+
+### localhost
+
+When running `ifconfig` you will notice the `lo` interface.
+
+```bash
+lkrych@lkrych-VirtualBox:~$ ifconfig 
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 78  bytes 6446 (6.4 KB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 78  bytes 6446 (6.4 KB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+```
+
+The `lo` interface is a **virtual network interface** called the **loopback** because it "loops back" to itself. Thus, connecting to `127.0.0.1` is connecting the machine to itself. When outgoing data to localhost reaches the kernel network interface, the kernel just repackages the incoming data and sends it back through `lo`.
