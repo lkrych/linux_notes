@@ -199,3 +199,19 @@ Most users interact with `NetworkManager` through an applet on the desktop. It's
 The `NetworkManager` configuration directory is usually `/etc/NetworkManager`. There are specifications in here for which interfaces to manage (you probably don't need to manage localhost), and what to do if a specific interface goes up or down (dispatching).
 
 ### Resolving Host Names
+
+One of the final basic tasks in any network configuration is hostname resolution with DNS. DNS is entirely in the user-space. Automatic network configuration services such as DHCP nearly always include DNS configuration.
+
+A DNS lookup in a Linux system looks like the following:
+
+1. The application calls a function to look up the IP address behind a hostname. This funnction is in the system's shared library, so the application doesn't need to know how it works.
+2. When the function in the shared library runs, it acts according to a set of rules ( found in `/etc/nsswitch.conf`) to determine the plan of action on lookups. For example, the rules usually say that before going out to DNS, check the `/etc/hosts` file.
+3. When the function decides to use DNS for the name lookup, it consults an additional configuration file to find a DNS name server.
+4. The function sends a DNS lookup request, over the network to the name server.
+5. The name server replies with the IP address for the hostname, and the function returns this IP address to the application.
+
+**this is actually the simplified version** :(. There are often more actors attempting to speed up the transaction.
+
+On most systems, you can override hostname lookups with the `/etc/hosts` file.
+
+The traditional configuration file for DNS servers is `/etc/resolv.conf`.
