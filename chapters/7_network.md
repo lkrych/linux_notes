@@ -184,4 +184,18 @@ To actually connect a Linux machine to the Internet, you or a piece of software 
 
 Although most systems used to configure the network in their boot mechanisms -- and many still do -- the dynamic nature of modern networks means that most machines don't have static IP addresses. Rather than storing the IP address and other network information on your machine, **your machine gets this information from somewhere on the local physical network** when it first attaches. 
 
-Dynamic Host Configuration Protocol (DHCP) do the basic network layer configuration on typical clients. This is nice and simplified, in the real world (especially when dealing with wireless connections), things are more complicated. In Linux, a system service that can monitor physical networks and choose and configure kernel network interfaces is used.
+**Dynamic Host Configuration Protocol (DHCP)** does the basic network layer configuration on typical clients. This is nice and simplified, in the real world (especially when dealing with wireless connections), things are more complicated. In Linux, **a system service that can monitor physical networks and choose and configure kernel network interfaces is used**.
+
+### Network Configuration Managers
+
+The most widely used option for automatically configuring networks is to use `NetworkManager`. `NetworkManager` is a daemon that the system starts on boot. It's **job is to listen to events from then system and users and to change the network configurations** based upon a bunch of rules.
+
+When running `NetworkManager` maintains two basic levels of configuration.  The first is a collection of information about **available hardware devices**, which it collects from the kernel and maintains by monitoring `udev` over the Desktop Bus (D-bus). The second configuration level is a more specific **list of connections**: hardware devices and additional physical and network layer configuration parameters.
+
+To activate a connection, `NetworkManager` often delegates tasks to specialized network tools like `dhclient`.
+
+Most users interact with `NetworkManager` through an applet on the desktop. It's usually an icon that indicates connection status. To control the network manager through the command line, you can use the `nmcli` tool.
+
+The `NetworkManager` configuration directory is usually `/etc/NetworkManager`. There are specifications in here for which interfaces to manage (you probably don't need to manage localhost), and what to do if a specific interface goes up or down (dispatching).
+
+### Resolving Host Names
