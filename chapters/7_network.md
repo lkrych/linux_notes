@@ -18,6 +18,14 @@
 * [nsswitch.conf](#nsswitch.conf)
 * [localhost](#localhost)
 * [The Transport Layer](#the-transport-layer)
+  * [TCP Ports and Connections](#tcp-ports-and-connections)
+* [Revisiting a Simple Local Network](#revisiting-a-simple-local-network)
+  * [DHCP](#dhcp)
+  * [Configuring Linux as a router](#configuring-linux-as-a-router)
+  * [NAT](#nat)
+  * [Firewalls](#firewalls)
+* [ARP](#arp)
+* [Wireless](#wireless)
 ## Introduction
 
 Networking is the practice of connecting computers and sending data between them. To make this work, you need to answer two fundamental questions:
@@ -341,3 +349,92 @@ The private networks specified by RFC 1918 are:
 | 192.168.0.0 | 255.255.0.0 | 192.168.0.0/16 |
 | 172.16.0.0 | 255.240.0.0 | 172.16.0.0/12 |
 
+You can carve up private subnets as you wish. **Hosts on the Internet know nothing about private subnets and will not send packets to them**. Thus you need NAT. 
+
+### NAT
+
+**Network Address Translation (NAT)** is the most commonly used way to** share a single IP address with a private network**, and it is nearly universal in home and small office networks.
+
+The basic idea behind NAT is that the router doesn't just move pockets from one subnet to another, it transforms them as it moves them. Here's how it works:
+
+1. A host on the internal private network wants to make a connection to the outside world. It sends connection request packets through the router.
+2. The router intercepts the connection request packet rather than passing it out through the Internet (where it would be lost)
+3. The router determines the destination of the connection request packet and opens its own connection to the destination.
+4. When the router obtain the connection, it fakes a "connection established" message back to the original internal host.
+5. The router is now the middleman between the internal host and the destination. The destination knows nothing about the internal host.
+
+NAT must go beyond the Internet layer and dissect packets to pull out more information, particularly the UDP and TCP port numbers.
+
+In order to set up a Linux machine to perform NAT, you must activate the following inside your kernel configuration: network packet filtering, connection tracking, IP tables support, full NAT, and MASQUERADE target support.
+
+### Firewalls
+
+Routers should always include some kind of firewall to keep undesirable traffic out of your network. A **firewall** is software and or hardware that sits on a router between the Internet and a smaller network, and attempts to ensure that nothing "bad" from the Internet harms the smaller network. A system can filter a packet when:
+
+1. it receives a packet.
+2. it sends a packet.
+3. it forwards a packet to another host or gateway.
+
+**Firewalls put checkpoints for packets at the point of data transfer**. The checkpoints drop, reject, or accept packets, usually on the following criteria:
+
+1. the source or destination IP address or subnet.
+2. the source or destination port.
+3. the firewall network interface.
+
+In Linux, you create firewall **rules in a series** known as a **chain**. A **set of chains** makes up a **table**. 
+
+As a packet moves through the various parts of the Linux networking subsystem, the kernel applies the rules in certain chains to the packets. The whole system is called `iptables`.
+
+Because there can be many tables with many chains, packet flow can become complicated. You'll normally work with the `filter` table. There are three basic chains for the `filter` table: INPUT for incoming packets, OUTPUT for outgoing packets, and FORWARD for routed packets.
+
+You can use the user-space `iptables` interface to modify how the system works.
+
+To view the current set up use: 
+
+```bash
+lkrych@lkrych-VirtualBox:~$ sudo iptables -L
+[sudo] password for lkrych: 
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+ACCEPT     udp  --  anywhere             anywhere             udp dpt:domain
+ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:domain
+ACCEPT     udp  --  anywhere             anywhere             udp dpt:bootps
+ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:bootps
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+ACCEPT     all  --  anywhere             192.168.122.0/24     ctstate RELATED,ESTABLISHED
+ACCEPT     all  --  192.168.122.0/24     anywhere            
+ACCEPT     all  --  anywhere             anywhere            
+REJECT     all  --  anywhere             anywhere             reject-with icmp-port-unreachable
+REJECT     all  --  anywhere             anywhere             reject-with icmp-port-unreachable
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+ACCEPT     udp  --  anywhere             anywhere             udp dpt:bootpc
+```
+
+In general, **the best firewall policy is one that only allows packets that you trust and denies everything else**. 
+
+## ARP
+
+When constructing an Ethernet frame for an IP packet, **how does the host know which MAC address corresponds to the destination IP address?** There is an automated system for looking up MAC addresses called **Address Resolution Protocol (ARP)**. 
+
+A host using Ethernet as its link layer and IP as the network layer maintains a small table called an **ARP cache that maps IP addresses to MAC addresses**. In Linux, the ARP cache is in the kernel. To view your system's ARP cache use `arp -n`
+
+```bash
+lkrych@lkrych-VirtualBox:~$ arp -n
+Address                  HWtype  HWaddress           Flags Mask            Iface
+10.0.2.2                 ether   52:54:00:12:35:02   C                     enp0s3
+```
+
+When a machine boots, its ARP cache is empty. If a **target address is not in an ARP cache** the following steps occur:
+
+1. The origin host creates a special Ethernet frame containing an ARP request packet for the MAC address that corresponds to the target IP address
+2. The origin host broadcasts this frame to the entire physical network for the target's subnet.
+3. If one of the other hosts on the subnet knows about the target, it creates a reply packet and frame containing the address and sends it back. Often this is the target host replying with its own MAC address.
+4. The origin hots adds the IP-MAC pair to the ARP cache.
+
+## Wireless
+
+Much like wired hardware, wireless devices have MAC addresses and user Ethernet frames to transmit and receive data. The main difference is that additional components in the physical layer: frequencies, network IDs, security and so on.
