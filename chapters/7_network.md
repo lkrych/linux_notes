@@ -12,7 +12,13 @@
     * [traceroute](#traceroute)
     * [host](#host)
 * [The Physical Layer and Ethernet](#the-physical-layer-and-ethernet)
-### Introduction
+  * [Kernel Network Interfaces](#kernel-network-interfaces)
+  * [Network Configuration Managers](#network-configuration-managers)
+* [Resolving Host Names](#resolving-host-names)
+* [nsswitch.conf](#nsswitch.conf)
+* [localhost](#localhost)
+* [The Transport Layer](#the-transport-layer)
+## Introduction
 
 Networking is the practice of connecting computers and sending data between them. To make this work, you need to answer two fundamental questions:
 
@@ -25,7 +31,7 @@ In a simple network, hosts are connected to a **router**, which is **a host that
 
 A computer transmits data over a network in small chunks called **packets**, which consist of two parts, a **header** and a **payload**. The header contains identifying information, the payload contains the actual data the computer wants to send. Breaking messages into smaller units makes it easier to detect and compensate for errors in a network.
 
-### Network Layers
+## Network Layers
 
 Let's look at a simplified version of the network layers your applications will meet when sending packets across the internet. It's important to understand this structure because **your data will travel through these layers at least twice** before it reaches its destination.
 
@@ -34,7 +40,7 @@ Let's look at a simplified version of the network layers your applications will 
 3. **Network Layer** - Defines how to move packets from a source host to a destination host.
 4. **Physical Layer** - Defines how to send raw data across a physical medium.
 
-### The Network/Internet Layer
+## The Network/Internet Layer
 
 We are specifically going to talk about the IP protocol on the network layer for most of this discussion. One of the most important aspects of the Internet Layer is that it's meant to be a software network that **places no particular requirements on hardware or operating systems**: that is it is **system agnostic**. 
 
@@ -152,7 +158,7 @@ opendns.com mail is handled by 10 aspmx2.googlemail.com.
 opendns.com mail is handled by 10 aspmx3.googlemail.com.
 ```
 
-### The Physical Layer and Ethernet
+## The Physical Layer and Ethernet
 
 The Internet is a software network. Nothing we've discussed thus far is hardware-specific. However, you still have to **put the network layer on some kind of hardware**. That **interface is called the physical layer**.
 
@@ -264,3 +270,74 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
 ```
 
 The `lo` interface is a **virtual network interface** called the **loopback** because it "loops back" to itself. Thus, connecting to `127.0.0.1` is connecting the machine to itself. When outgoing data to localhost reaches the kernel network interface, the kernel just repackages the incoming data and sends it back through `lo`.
+
+## The Transport Layer
+
+So far, we've talked about how packets move from host to host across the Internet. Now we will address the question of **how a Linux machine presents the packet data it receives from other hosts to its running processes**.
+
+The **transport layer** protocols **bridge the gap between the raw packets of the Internet layer and the needs of the application** layer. The two most popular transport protocols are the Transmission Control Protocol (TCP) and the User Datagram Protocol (UDP).
+
+### TCP Ports and Connections
+
+TCP **provides for multiple network applications** on one machine by means of **network ports**. If the IP address is like the street address of an apartment building, the port is the mailbox number.
+
+When using TCP, an application opens a **connection** between one port on its own machine and a port on a remote host. You can identify a connection by using the pair of IP addresses and port numbers.
+
+To view the connections currently open on your machine, use `netstat`.
+
+```bash
+lkrych@lkrych-VirtualBox:~$ netstat -n
+Active Internet connections (w/o servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State      
+tcp        0      0 10.0.2.15:46630         91.189.91.38:80         TIME_WAIT  
+tcp        0      0 10.0.2.15:46622         91.189.91.38:80         TIME_WAIT  
+tcp        0      0 10.0.2.15:46620         91.189.91.38:80         TIME_WAIT  
+tcp        0      0 10.0.2.15:57482         91.189.92.38:443        TIME_WAIT  
+Active UNIX domain sockets (w/o servers)
+Proto RefCnt Flags       Type       State         I-Node   Path
+unix  2      [ ]         DGRAM                    25465    /run/user/1000/systemd/notify
+unix  2      [ ]         DGRAM                    14753    /run/systemd/journal/syslog
+```
+
+To establish a transport layer connection, a process on one host initiates the connection from one of its local ports to a port on a second host with a special series of packets.  In order to recognize the incoming packets, the second host must have a process listening on the correct port.
+
+The important thing to know about the ports is that the client picks a port on its side that isn't currently in use, but it nearly always connects sto some well-known port on the server side.
+
+To list all TCP ports that your machine is listening on use `netstate -ntl`
+
+There's no single way to tell if a port is a well-known port, however, a good place to start is `/etc/services`.
+
+## Revisiting a Simple Local Network
+
+### DHCP
+
+When you set a network host to get its configuration automatically from the network, you're telling it to use **Dynamic Host Configuration protocol (DHCP)** to **get an IP address, subnet mask, default gateway, and DNS servers**.
+
+For a host to get its configuration with DHCP, it must be able to send messages to a DHCP server on its network. Therefore, each physical network should have its own DHCP server, the **router typically acts as a DHCP server**. When making an initial DHCP request, a host doesn't even know the address of a DHCP server, so it broadcasts the request to all hosts.
+
+When a machine asks DHCP for an IP address, it is actually asking for a lease on that address. WHen the lease is up, the client can ask to renew the lease.
+
+The `dhclient` is the daemon that is used to manage DHCP communication on a host machine. It coordinates communication with the router DHCP server.
+
+### Configuring Linux as a router
+
+**Routers are essentially just computers with more than one physical network interface**. By default though, the Linux kernel does not automatically move packets from one subnet to another. To enable this basic routing function, you **need to enable IP forwarding** in the router's kernel. 
+
+```bash
+sysctl -w net.ipv4.ip_forward
+```
+
+When the router is connected to a network interface with an Internet uplink, this same setup allows Internet access for all hosts on both subnets because they're configured to use the router as the default gateway.
+
+One problem is that certain IP addresses such as 10.23.2.4 are not actually visible to the whole internet, they're on a **private network**. To provide for Internet connectivity, you must set up a feature called **Network Address Translation**. 
+
+So, what's the deal with private networks? If you want a block of Internet addresses that every host on the Internet can see, you can buy them from your ISP. However because this range is limited, folks use a private subnet to manage machines with a LAN and then a public IP for their router.
+
+The private networks specified by RFC 1918 are:
+
+| Network | Subnet Mask | CIDR Form|
+|----|----|----|
+| 10.0.0.0 | 255.0.0.0 | 10.0.0.0/8 |
+| 192.168.0.0 | 255.255.0.0 | 192.168.0.0/16 |
+| 172.16.0.0 | 255.240.0.0 | 172.16.0.0/12 |
+
